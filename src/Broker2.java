@@ -1,7 +1,6 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Broker2 extends Thread{
@@ -61,7 +60,7 @@ public class Broker2 extends Thread{
 
             lock1.lock();
             String pollId = null;
-            pollId = requestsq.poll();
+            pollId = requestsq.peek();
             DataStruct data = null;
             if(pollId != null) {
                 data = requests.get(pollId);
@@ -71,20 +70,28 @@ public class Broker2 extends Thread{
             if(data!=null) {
                 String outStr="";
                 try {
+                    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                    PrintWriter out = new PrintWriter(byteStream, true);
                     System.out.println("locks: Broker2 call getData ... ");
                     //handler.getData(data.stdin,out,null,data.cookie,data.cookiesOut);
                     try{Thread.sleep(1000);} catch(Exception e) {};
-                    System.out.println("locks: Broker2 call getData ... done");
+                    Random random = new Random();
+                    boolean value = random.nextBoolean();
+                    if(value) out.println("Some data");
+                    System.out.println("locks: Broker2 call getData ... done out size: "+byteStream.size());
                     data.out = "<done/>";//byteStream.toString();
                     //Lock?
                     System.out.println("locks: Broker2 update queue data ... ");
                     lock1.lock();
-                    requests.put(pollId,data);
+                    if(byteStream.size()>0) {
+                        requestsq.poll();
+                        requests.put(pollId,data);
+                    }
                     lock1.unlock();
                     System.out.println("locks: Broker2 call getData ... done");
                     //Reset timeout
                     timeOut = 200;
-                    try{Thread.sleep(1000);} catch(Exception e) {};
+                    //try{Thread.sleep(1000);} catch(Exception e) {};
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
